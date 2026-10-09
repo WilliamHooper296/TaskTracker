@@ -1,0 +1,1 @@
+SELECT contents, checked, goal_id FROM goals WHERE user_id = $1

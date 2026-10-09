@@ -1,0 +1,1 @@
+INSERT INTO goals (user_id, contents, checked) VALUES ($1, $2, $3)

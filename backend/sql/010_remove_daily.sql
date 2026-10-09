@@ -1,0 +1,1 @@
+DELETE FROM daily WHERE daily_id = $1

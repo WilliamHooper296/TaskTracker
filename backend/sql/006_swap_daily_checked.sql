@@ -1,0 +1,1 @@
+UPDATE daily SET checked = not checked WHERE daily_id = $1

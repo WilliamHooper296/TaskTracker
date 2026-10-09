@@ -1,0 +1,1 @@
+SELECT contents, checked, daily_id, completion FROM daily WHERE user_id = $1

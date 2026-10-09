@@ -1,0 +1,1 @@
+UPDATE goals SET checked = not checked WHERE goal_id = $1

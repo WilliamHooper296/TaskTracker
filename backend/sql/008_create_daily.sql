@@ -1,0 +1,1 @@
+INSERT INTO daily (user_id, contents, checked, completion, created_at) VALUES ($1, $2, $3, $4, CURRENT_DATE)
