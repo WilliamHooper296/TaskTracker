@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import trash from "../assets/trash.svg"
 
 type Daily = {
   contents: string;
@@ -78,14 +79,14 @@ function DailyList() {
       <div className="grid grid-cols-[1fr_auto_auto_auto] gap-4 ">
         {daily.map((task) => (
           <div key={task.daily_id} className="contents">
-            <div>{task.contents}</div>
+            <div className={`${task.checked ? "line-through decoration-double" : ""}`}>{task.contents}</div>
             <input
               type="checkbox"
               checked={task.checked}
               onChange={() => handleToggleDaily(task.daily_id)}
             ></input>
             <div>{task.completion.substring(0, 5)}</div>
-            <button onClick={() => handleRemoveTask(task.daily_id)} className="border-2">DELETE</button>
+            <button onClick={() => handleRemoveTask(task.daily_id)} className="border-2 rounded-full bg-red-600"><img src={trash} width="20px" height="20px"/></button>
           </div>
         ))}
       </div>
