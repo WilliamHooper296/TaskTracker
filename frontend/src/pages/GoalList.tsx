@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import trash from "../assets/trash.svg"
+import trash from '../assets/trash.svg';
 
 type Goal = {
   contents: string;
@@ -19,7 +19,9 @@ async function fetchGoals(): Promise<Goal[]> {
       user_id: USER_ID,
     },
   }).then((res) => res.json());
-  return response.list.sort((a: Goal, b: Goal) => a.contents.localeCompare(b.contents));
+  return response.list.sort((a: Goal, b: Goal) =>
+    a.contents.localeCompare(b.contents),
+  );
 }
 
 function GoalList() {
@@ -64,11 +66,11 @@ function GoalList() {
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',
-        user_id: USER_ID
+        user_id: USER_ID,
       },
-      body: JSON.stringify({goal_id: goal_id})
+      body: JSON.stringify({ goal_id: goal_id }),
     });
-    setGoals(await fetchGoals())
+    setGoals(await fetchGoals());
   }
 
   return (
@@ -76,13 +78,22 @@ function GoalList() {
       <div className="grid grid-cols-[1fr_auto_auto] gap-4 ">
         {goals.map((task) => (
           <div key={task.goal_id} className="contents">
-            <div className={`${task.checked ? "line-through decoration-double" : ""}`}>{task.contents}</div>
+            <div
+              className={`${task.checked ? 'line-through decoration-double' : ''}`}
+            >
+              {task.contents}
+            </div>
             <input
               type="checkbox"
               checked={task.checked}
               onChange={() => handleToggleDaily(task.goal_id)}
             ></input>
-            <button onClick={() => handleRemoveTask(task.goal_id)} className="border-2 rounded-full bg-red-600"><img src={trash} width="20px" height="20px"/></button>
+            <button
+              onClick={() => handleRemoveTask(task.goal_id)}
+              className="border-2 rounded-full bg-red-600"
+            >
+              <img src={trash} width="20px" height="20px" />
+            </button>
           </div>
         ))}
       </div>
