@@ -90,7 +90,7 @@ function GoalList() {
             ></input>
             <button
               onClick={() => handleRemoveTask(task.goal_id)}
-              className="border-2 rounded-full bg-red-600"
+              className="border-2 rounded-full bg-red-600 hover:bg-red-900"
             >
               <img src={trash} width="20px" height="20px" />
             </button>

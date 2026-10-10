@@ -1,0 +1,1 @@
+INSERT INTO session (session_id, user_id, last_query, expirey) VALUES ($1, $2, $3, $4)

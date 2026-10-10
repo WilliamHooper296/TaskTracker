@@ -1,0 +1,1 @@
+UPDATE session SET last_query = $1 WHERE session_id = $2

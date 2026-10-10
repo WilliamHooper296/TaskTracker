@@ -3,6 +3,7 @@ import cors from "cors";
 import pool from "./db.js";
 import { readFile } from "node:fs/promises";
 import argon2 from "argon2";
+import crypto from "node:crypto";
 
 const app = express();
 
@@ -29,9 +30,12 @@ const createDailyQuery = await readFile("sql/008_create_daily.sql", "utf-8");
 const createGoalsQuery = await readFile("sql/009_create_goals.sql", "utf-8");
 const removeDailyQuery = await readFile("sql/010_remove_daily.sql", "utf-8");
 const removeGoalQuery = await readFile("sql/011_remove_goal.sql", "utf-8");
-const getUserPassQuery = await readFile("sql/012_get_user_pass.sql", 'utf-8')
-const checkUserUniquenessQuery = await readFile("sql/013_check_user_uniqueness", "utf-8")
-const createUserQuery = await readFile("sql/014_create_user.sql", "utf-8")
+const getUserQuery = await readFile("sql/012_get_user.sql", "utf-8");
+const checkUserUniquenessQuery = await readFile(
+  "sql/013_check_user_uniqueness.sql",
+  "utf-8",
+);
+const createUserQuery = await readFile("sql/014_create_user.sql", "utf-8");
 
 app.post("/add/daily", async (req, res) => {
   const id = req.headers["user_id"];
@@ -119,37 +123,49 @@ app.delete("/lists/goals", async (req, res) => {
 });
 
 app.post("/signup", async (req, res) => {
-  const user = req.body['username']
-  const pass = req.body['password']
+  const user = req.body["username"];
+  const pass = req.body["password"];
 
-  const result = await pool.query(checkUserUniquenessQuery, [user])
+  const result = await pool.query(checkUserUniquenessQuery, [user]);
 
-  if(result.rowCount != null && result.rowCount > 0){
-    const hashpass = argon2.hash(pass)
-    await pool.query(createUserQuery, [user, hashpass])
-    res.json({ status: "SUCCESS" })
-  }else{
-    res.json({ status: "FAILURE" })
+  if (result.rowCount != null && result.rowCount > 0) {
+    const hashpass = argon2.hash(pass);
+    await pool.query(createUserQuery, [user, hashpass]);
+    res.json({ status: "SUCCESS" });
+  } else {
+    res.json({ status: "FAILURE" });
   }
-
-})
+});
 
 app.get("/verify", async (req, res) => {
-  const user = req.body['username']
-  const pass = req.body['password']
+  const user = req.body["username"];
+  const pass = req.body["password"];
 
-  const result = await pool.query(getUserPassQuery, [user])
-  const userPass = result.rows[0].pass
+  const result = await pool.query(getUserQuery, [user]);
 
-  const verified = await argon2.verify(userPass, pass)
-
-  if(verified){
-    //return cookie
-  }else{
-    res.json({ status: "FAILURE" })
+  if (!result) {
+    res.json({ status: "FAILURE" });
+    return;
   }
 
-})
+  const userPass = result.rows[0].pass;
+
+  const verified = await argon2.verify(userPass, pass);
+
+  if (verified) {
+    const uuid = crypto.randomUUID();
+
+    res.cookie("session_id", uuid, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "lax",
+    });
+  } else {
+    res.json({ status: "FAILURE" });
+  }
+
+  res.json({ status: "SUCCESS" });
+});
 
 app.listen(3000, () => {
   console.log("Server running on http://localhost:3000");

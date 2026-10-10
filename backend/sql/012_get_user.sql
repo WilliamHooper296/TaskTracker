@@ -1,0 +1,1 @@
+SELECT user_id, pass FROM users WHERE username = $1

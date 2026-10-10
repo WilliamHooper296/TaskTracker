@@ -94,7 +94,7 @@ function DailyList() {
             <div>{task.completion.substring(0, 5)}</div>
             <button
               onClick={() => handleRemoveTask(task.daily_id)}
-              className="border-2 rounded-full bg-red-600"
+              className="border-2 rounded-full bg-red-600 hover:bg-red-900"
             >
               <img src={trash} width="20px" height="20px" />
             </button>

@@ -3,7 +3,7 @@ import Homepage from './pages/Homepage';
 import Login from './pages/Login';
 
 function App() {
-  return <Login/>
+  return <Login />;
   //return <Homepage />;
 }
 
