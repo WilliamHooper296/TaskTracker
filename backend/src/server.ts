@@ -4,11 +4,14 @@ import pool from "./db.js";
 import { readFile } from "node:fs/promises";
 import argon2 from "argon2";
 import crypto from "node:crypto";
+import { Request, Response, NextFunction } from "express";
+import cookieParser from "cookie-parser";
 
 const app = express();
 
 app.use(express.json());
-app.use(cors());
+app.use(cors({ credentials: true }));
+app.use(cookieParser());
 
 const retrieveUserDailyQuery = await readFile(
   "sql/004_retrieve_user_daily.sql",
@@ -36,22 +39,60 @@ const checkUserUniquenessQuery = await readFile(
   "utf-8",
 );
 const createUserQuery = await readFile("sql/014_create_user.sql", "utf-8");
+const createSessionQuery = await readFile(
+  "sql/016_create_session.sql",
+  "utf-8",
+);
+const endSessionQuery = await readFile("sql/017_end_session.sql", "utf-8");
+const updateSessionQuery = await readFile(
+  "sql/018_update_session.sql",
+  "utf-8",
+);
+const getSessionIdQuery = await readFile("sql/019_get_session_id.sql", "utf-8");
 
-app.post("/add/daily", async (req, res) => {
-  const id = req.headers["user_id"];
-  const UserId = parseInt(typeof id == "string" ? id : "0", 10);
+async function verifySession(req: Request, res: Response, next: NextFunction) {
+  const session = req.cookies.session_id;
+  if (!session) {
+    res.status(401).json({ status: "LOGIN" });
+    return;
+  }
+
+  const user_data = await pool.query(getSessionIdQuery, [session]);
+
+  if (user_data.rowCount == null || user_data.rowCount < 1) {
+    res.status(401).json({ status: "LOGIN" });
+    return;
+  }
+
+  const now = new Date();
+  const last_query = new Date(user_data.rows[0].last_query);
+  const expirey = new Date(user_data.rows[0].expirey);
+
+  if (now > expirey || now.getTime() > last_query.getTime() + 1000 * 60 * 30) {
+    await pool.query(endSessionQuery, [session]);
+    res.status(401).json({ status: "LOGIN" });
+    return;
+  } else {
+    await pool.query(updateSessionQuery, [session]);
+    res.locals.user_id = user_data.rows[0].user_id;
+  }
+
+  next();
+}
+
+app.post("/add/daily", verifySession, async (req, res) => {
+  const id = res.locals.user_id;
 
   const input = req.body["name"];
   const complete = req.body["complete"];
 
-  await pool.query(createDailyQuery, [UserId, input, false, complete]);
+  await pool.query(createDailyQuery, [id, input, false, complete]);
 
   res.json({ status: "SUCCESS" });
 });
 
-app.put("/swap/daily", async (req, res) => {
-  const id = req.headers["user_id"];
-  const UserId = parseInt(typeof id == "string" ? id : "0", 10);
+app.put("/swap/daily", verifySession, async (req, res) => {
+  const id = res.locals.user_id;
 
   const daily_id = req.body["daily_id"];
 
@@ -60,18 +101,16 @@ app.put("/swap/daily", async (req, res) => {
   res.json({ status: "SUCCESS" });
 });
 
-app.get("/lists/daily", async (req, res) => {
-  const id = req["headers"].user_id;
-  const UserId = parseInt(typeof id == "string" ? id : "0", 10);
+app.get("/lists/daily", verifySession, async (req, res) => {
+  const id = res.locals.user_id;
 
-  const result = await pool.query(retrieveUserDailyQuery, [UserId]);
+  const result = await pool.query(retrieveUserDailyQuery, [id]);
 
-  res.json({ list: result.rows });
+  res.json({ status: "SUCCESS", list: result.rows });
 });
 
-app.delete("/lists/daily", async (req, res) => {
-  const id = req.headers["user_id"];
-  const UserId = parseInt(typeof id == "string" ? id : "0", 10);
+app.delete("/lists/daily", verifySession, async (req, res) => {
+  const id = res.locals.user_id;
 
   const daily_id = req.body["daily_id"];
 
@@ -80,20 +119,18 @@ app.delete("/lists/daily", async (req, res) => {
   res.json({ status: "SUCCESS" });
 });
 
-app.post("/add/goal", async (req, res) => {
-  const id = req.headers["user_id"];
-  const UserId = parseInt(typeof id == "string" ? id : "0", 10);
+app.post("/add/goal", verifySession, async (req, res) => {
+  const id = res.locals.user_id;
 
   const input = req.body["name"];
 
-  await pool.query(createGoalsQuery, [UserId, input, false]);
+  await pool.query(createGoalsQuery, [id, input, false]);
 
   res.json({ status: "SUCCESS" });
 });
 
-app.put("/swap/goals", async (req, res) => {
-  const id = req.headers["user_id"];
-  const UserId = parseInt(typeof id == "string" ? id : "0", 10);
+app.put("/swap/goals", verifySession, async (req, res) => {
+  const id = res.locals.user_id;
 
   const goal_id = req.body["goal_id"];
 
@@ -102,18 +139,16 @@ app.put("/swap/goals", async (req, res) => {
   res.json({ status: "SUCCESS" });
 });
 
-app.get("/lists/goals", async (req, res) => {
-  const id = req.headers["user_id"];
-  const UserId = parseInt(typeof id == "string" ? id : "0", 10);
+app.get("/lists/goals", verifySession, async (req, res) => {
+  const id = res.locals.user_id;
 
-  const result = await pool.query(retrieveUserGoalsQuery, [UserId]);
+  const result = await pool.query(retrieveUserGoalsQuery, [id]);
 
   res.json({ list: result.rows });
 });
 
-app.delete("/lists/goals", async (req, res) => {
-  const id = req.headers["user_id"];
-  const UserId = parseInt(typeof id == "string" ? id : "0", 10);
+app.delete("/lists/goals", verifySession, async (req, res) => {
+  const id = res.locals.user_id;
 
   const goal_id = req.body["goal_id"];
 
@@ -128,8 +163,8 @@ app.post("/signup", async (req, res) => {
 
   const result = await pool.query(checkUserUniquenessQuery, [user]);
 
-  if (result.rowCount != null && result.rowCount > 0) {
-    const hashpass = argon2.hash(pass);
+  if (result.rowCount == null || result.rowCount < 1) {
+    const hashpass = await argon2.hash(pass);
     await pool.query(createUserQuery, [user, hashpass]);
     res.json({ status: "SUCCESS" });
   } else {
@@ -137,13 +172,13 @@ app.post("/signup", async (req, res) => {
   }
 });
 
-app.get("/verify", async (req, res) => {
+app.post("/verify", async (req, res) => {
   const user = req.body["username"];
   const pass = req.body["password"];
 
   const result = await pool.query(getUserQuery, [user]);
 
-  if (!result) {
+  if (result.rowCount == null || result.rowCount < 1) {
     res.json({ status: "FAILURE" });
     return;
   }
@@ -154,14 +189,18 @@ app.get("/verify", async (req, res) => {
 
   if (verified) {
     const uuid = crypto.randomUUID();
+    const user_id = result.rows[0].user_id;
+
+    await pool.query(createSessionQuery, [uuid, user_id]);
 
     res.cookie("session_id", uuid, {
       httpOnly: true,
-      secure: true,
+      secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
     });
   } else {
-    res.json({ status: "FAILURE" });
+    res.status(401).json({ status: "LOGIN" });
+    return;
   }
 
   res.json({ status: "SUCCESS" });

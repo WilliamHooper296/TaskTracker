@@ -1,0 +1,1 @@
+SELECT user_id, last_query, expirey FROM session WHERE session_id = $1 LIMIT 1

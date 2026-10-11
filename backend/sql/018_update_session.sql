@@ -1,1 +1,1 @@
-UPDATE session SET last_query = $1 WHERE session_id = $2
+UPDATE session SET last_query = NOW()::TIMESTAMP WHERE session_id = $1

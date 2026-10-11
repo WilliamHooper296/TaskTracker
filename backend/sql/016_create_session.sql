@@ -1,1 +1,1 @@
-INSERT INTO session (session_id, user_id, last_query, expirey) VALUES ($1, $2, $3, $4)
+INSERT INTO session (session_id, user_id, last_query, expirey) VALUES ($1, $2, NOW()::TIMESTAMP, (NOW() + INTERVAL '1 week')::TIMESTAMP)
