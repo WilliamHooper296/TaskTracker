@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import trash from '../assets/trash.svg';
+import { useNavigate } from 'react-router-dom';
 
 type Daily = {
   contents: string;
@@ -8,24 +9,10 @@ type Daily = {
   completion: string;
 };
 
-const USER_ID = '1';
-
 const API_URL = import.meta.env.VITE_BACKEND_URL;
 
-async function fetchDaily(): Promise<Daily[]> {
-  const response = await fetch(`${API_URL}/lists/daily`, {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-      user_id: USER_ID,
-    },
-  }).then((res) => res.json());
-  return response.list.sort((a: Daily, b: Daily) =>
-    a.completion.localeCompare(b.completion),
-  );
-}
-
 function DailyList() {
+  const navigate = useNavigate();
   const [DailyNameInput, setDailyNameInput] = useState('');
   const [DailyTimeInput, setDailyTimeInput] = useState('');
   const [daily, setDaily] = useState<Daily[]>([]);
@@ -34,45 +21,78 @@ function DailyList() {
     fetchDaily().then((res) => setDaily(res));
   }, []);
 
+  async function fetchDaily(): Promise<Daily[]> {
+    const response = await fetch(`${API_URL}/lists/daily`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+    }).then((res) => res.json());
+
+    if (response.status == 401) {
+      navigate('/login');
+    }
+
+    return response.list.sort((a: Daily, b: Daily) =>
+      a.completion.localeCompare(b.completion),
+    );
+  }
+
   async function handleAddTask() {
     if (!DailyNameInput.trim()) return;
 
-    await fetch(`${API_URL}/add/daily`, {
+    const response = await fetch(`${API_URL}/add/daily`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        user_id: USER_ID,
       },
       body: JSON.stringify({
         name: DailyNameInput,
         complete: DailyTimeInput,
       }),
+      credentials: 'include',
     });
+
+    if (response.status == 401) {
+      navigate('/login');
+    }
+
     setDaily(await fetchDaily());
     setDailyNameInput('');
   }
 
   async function handleToggleDaily(daily_id: number) {
-    await fetch(`${API_URL}/swap/daily`, {
+    const response = await fetch(`${API_URL}/swap/daily`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
-        user_id: USER_ID,
       },
       body: JSON.stringify({ daily_id: daily_id }),
+      credentials: 'include',
     });
+
+    if (response.status == 401) {
+      navigate('/login');
+    }
+
     setDaily(await fetchDaily());
   }
 
   async function handleRemoveTask(daily_id: number) {
-    await fetch(`${API_URL}/lists/daily`, {
+    const response = await fetch(`${API_URL}/lists/daily`, {
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',
-        user_id: USER_ID,
       },
       body: JSON.stringify({ daily_id: daily_id }),
+      credentials: 'include',
     });
+
+    if (response.status == 401) {
+      navigate('/login');
+    }
+
     setDaily(await fetchDaily());
   }
 

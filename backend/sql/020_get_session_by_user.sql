@@ -1,0 +1,1 @@
+SELECT session_id FROM session WHERE user_id = $1

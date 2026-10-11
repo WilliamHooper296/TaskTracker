@@ -3,14 +3,19 @@ import cors from "cors";
 import pool from "./db.js";
 import { readFile } from "node:fs/promises";
 import argon2 from "argon2";
-import crypto from "node:crypto";
+import crypto, { verify } from "node:crypto";
 import { Request, Response, NextFunction } from "express";
 import cookieParser from "cookie-parser";
 
 const app = express();
 
 app.use(express.json());
-app.use(cors({ credentials: true }));
+app.use(
+  cors({
+    origin: "http://localhost:5173",
+    credentials: true,
+  }),
+);
 app.use(cookieParser());
 
 const retrieveUserDailyQuery = await readFile(
@@ -49,18 +54,22 @@ const updateSessionQuery = await readFile(
   "utf-8",
 );
 const getSessionIdQuery = await readFile("sql/019_get_session_id.sql", "utf-8");
+const getSessionByUserQuery = await readFile(
+  "sql/020_get_session_by_user.sql",
+  "utf-8",
+);
 
 async function verifySession(req: Request, res: Response, next: NextFunction) {
   const session = req.cookies.session_id;
   if (!session) {
-    res.status(401).json({ status: "LOGIN" });
+    res.status(401).json({ status: "UNAUTHORIZED" });
     return;
   }
 
   const user_data = await pool.query(getSessionIdQuery, [session]);
 
   if (user_data.rowCount == null || user_data.rowCount < 1) {
-    res.status(401).json({ status: "LOGIN" });
+    res.status(401).json({ status: "UNAUTHORIZED" });
     return;
   }
 
@@ -70,11 +79,12 @@ async function verifySession(req: Request, res: Response, next: NextFunction) {
 
   if (now > expirey || now.getTime() > last_query.getTime() + 1000 * 60 * 30) {
     await pool.query(endSessionQuery, [session]);
-    res.status(401).json({ status: "LOGIN" });
+    res.status(401).json({ status: "UNAUTHORIZED" });
     return;
   } else {
     await pool.query(updateSessionQuery, [session]);
     res.locals.user_id = user_data.rows[0].user_id;
+    res.locals.session_id = user_data.rows[0].session_id;
   }
 
   next();
@@ -172,14 +182,14 @@ app.post("/signup", async (req, res) => {
   }
 });
 
-app.post("/verify", async (req, res) => {
+app.post("/login", async (req, res) => {
   const user = req.body["username"];
   const pass = req.body["password"];
 
   const result = await pool.query(getUserQuery, [user]);
 
   if (result.rowCount == null || result.rowCount < 1) {
-    res.json({ status: "FAILURE" });
+    res.status(401).json({ status: "UNAUTHORIZED" });
     return;
   }
 
@@ -188,8 +198,20 @@ app.post("/verify", async (req, res) => {
   const verified = await argon2.verify(userPass, pass);
 
   if (verified) {
-    const uuid = crypto.randomUUID();
     const user_id = result.rows[0].user_id;
+
+    const exists = await pool.query(getSessionByUserQuery, [user_id]);
+    if (exists.rowCount != null && exists.rowCount > 0) {
+      res.cookie("session_id", exists.rows[0].session_id, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+      });
+      res.json({ status: "SUCCESS" });
+      return;
+    }
+
+    const uuid = crypto.randomUUID();
 
     await pool.query(createSessionQuery, [uuid, user_id]);
 
@@ -199,11 +221,29 @@ app.post("/verify", async (req, res) => {
       sameSite: "lax",
     });
   } else {
-    res.status(401).json({ status: "LOGIN" });
+    res.status(401).json({ status: "UNAUTHORIZED" });
     return;
   }
 
   res.json({ status: "SUCCESS" });
+});
+
+app.get("/logout", async (req, res) => {
+  const session_id = req.cookies.session_id;
+  if (session_id) {
+    await pool.query(endSessionQuery, [session_id]);
+  }
+
+  res.clearCookie("session_id", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+  });
+  res.status(200).json({ status: "SUCCESS" });
+});
+
+app.get("/verifyUser", verifySession, (req, res) => {
+  res.status(200).json({ status: "AUTHORIZED" });
 });
 
 app.listen(3000, () => {
