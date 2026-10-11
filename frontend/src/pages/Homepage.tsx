@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DailyList from './DailyList';
 import GoalList from './GoalList';

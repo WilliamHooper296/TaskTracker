@@ -21,7 +21,12 @@ function Signup() {
       }),
     });
 
-    alert(`SIGNUP: ${response.status}`);
+    if(response.ok){
+      navigate('/login')
+    }else{
+      alert("Invalid")
+    }
+
   }
 
   return (

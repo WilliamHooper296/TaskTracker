@@ -6,12 +6,10 @@ const API_URL = import.meta.env.VITE_BACKEND_URL;
 function Login() {
   const [user, setUser] = useState('');
   const [pass, setPass] = useState('');
-  const [error, setError] = useState('');
 
   const navigate = useNavigate();
 
   async function login() {
-    setError('');
 
     try {
       const response = await fetch(`${API_URL}/login`, {
@@ -26,12 +24,11 @@ function Login() {
       if (response.ok) {
         navigate('/homepage');
       } else if (response.status === 401) {
-        setError('Invalid username or password.');
+        alert('Invalid username or password.');
       } else {
-        setError('Unable to log in. Please try again.');
+        alert('Unable to log in. Please try again.');
       }
     } catch {
-      setError('Unable to connect to the server. Please try again.');
     }
   }
 
@@ -60,7 +57,6 @@ function Login() {
           ></input>
         </div>
       </div>
-      {error && <p role="alert">{error}</p>}
       <div className="flex border-2 w-fit p-6 bg-emerald-100 gap-10 rounded-2xl">
         <button
           className="border-2 bg-emerald-200 p-2 rounded-2xl hover:bg-emerald-600"
