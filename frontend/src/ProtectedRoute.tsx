@@ -21,7 +21,7 @@ function ProtectedRoute({ children }: { children: ReactNode }) {
         }
 
         setAuth(true);
-      } catch (e) {
+      } catch {
         navigate('/login', { replace: true });
       } finally {
         setLoading(false);

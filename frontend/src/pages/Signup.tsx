@@ -21,12 +21,11 @@ function Signup() {
       }),
     });
 
-    if(response.ok){
-      navigate('/login')
-    }else{
-      alert("Invalid")
+    if (response.ok) {
+      navigate('/login');
+    } else {
+      alert('Invalid');
     }
-
   }
 
   return (

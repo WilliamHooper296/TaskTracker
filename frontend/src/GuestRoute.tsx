@@ -19,6 +19,7 @@ function GuestRoute({ children }: { children: ReactNode }) {
           return;
         }
       } catch (e) {
+        console.error('Error verifying guest route: ', e);
       } finally {
         setLoading(false);
       }

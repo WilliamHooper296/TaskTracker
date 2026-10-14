@@ -246,6 +246,4 @@ app.get("/verifyUser", verifySession, (req, res) => {
   res.status(200).json({ status: "AUTHORIZED" });
 });
 
-app.listen(3000, () => {
-  console.log("Server running on http://localhost:3000");
-});
+export default app

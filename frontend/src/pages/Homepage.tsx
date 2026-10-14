@@ -18,13 +18,17 @@ function Homepage() {
       } else {
         navigate('/login');
       }
-    } catch {}
+    } catch (e) {
+      console.error('Error signing out: ', e);
+    }
   }
 
   return (
     <div className="flex flex-col gap-10 items-center mb-10">
       <h1 className="text-lg">TASKS</h1>
-      <button onClick={signOut}>SIGN OUT</button>
+      <button className="border-2 p-1 rounded-lg" onClick={signOut}>
+        SIGN OUT
+      </button>
       <div className="p-4 w-fit border-1">
         <DailyList />
       </div>
@@ -39,7 +43,6 @@ function Homepage() {
 export default Homepage;
 
 //TODO: enforce dedup session create on backend -->
-//TODO: create protected routes
 
 //TODO: create archive backend route and frontend page/link
 //TODO: create daily refresh backend route

@@ -10,7 +10,6 @@ function Login() {
   const navigate = useNavigate();
 
   async function login() {
-
     try {
       const response = await fetch(`${API_URL}/login`, {
         method: 'POST',
@@ -28,7 +27,8 @@ function Login() {
       } else {
         alert('Unable to log in. Please try again.');
       }
-    } catch {
+    } catch (e) {
+      console.error('Error connecting to backend for login: ', e);
     }
   }
 
