@@ -1,8 +1,7 @@
 CREATE TABLE daily(
-    user_id INTEGER NOT NULL,
+    template_id INTEGER NOT NULL REFERENCES template(template_id),
     daily_id SERIAL PRIMARY KEY,
-    contents TEXT NOT NULL,
     checked BOOLEAN NOT NULL,
-    completion TIME NOT NULL,
-    created_at DATE NOT NULL
+    created_at DATE NOT NULL,
+    UNIQUE(template_id, created_at)
 )

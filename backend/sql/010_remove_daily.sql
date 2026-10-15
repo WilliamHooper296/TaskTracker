@@ -1,1 +1,1 @@
-DELETE FROM daily WHERE daily_id = $1
+DELETE FROM daily WHERE template_id = $1

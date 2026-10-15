@@ -7,6 +7,7 @@ type Daily = {
   checked: boolean;
   daily_id: number;
   completion: string;
+  template_id: number;
 };
 
 const API_URL = import.meta.env.VITE_BACKEND_URL;
@@ -79,13 +80,13 @@ function DailyList() {
     setDaily(await fetchDaily());
   }
 
-  async function handleRemoveTask(daily_id: number) {
+  async function handleRemoveTask(template_id: number) {
     const response = await fetch(`${API_URL}/lists/daily`, {
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ daily_id: daily_id }),
+      body: JSON.stringify({ template_id: template_id }),
       credentials: 'include',
     });
 
@@ -113,7 +114,7 @@ function DailyList() {
             ></input>
             <div>{task.completion.substring(0, 5)}</div>
             <button
-              onClick={() => handleRemoveTask(task.daily_id)}
+              onClick={() => handleRemoveTask(task.template_id)}
               className="border-2 rounded-full bg-red-600 hover:bg-red-900"
             >
               <img src={trash} width="20px" height="20px" />

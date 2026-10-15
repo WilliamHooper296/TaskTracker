@@ -1,0 +1,1 @@
+DELETE FROM template WHERE template_id = $1

@@ -59,6 +59,9 @@ const getSessionByUserQuery = await readFile(
   "sql/020_get_session_by_user.sql",
   "utf-8",
 );
+const generateDailyQuery = await readFile("sql/022_generate_daily.sql", "utf-8");
+const createTemplateQuery = await readFile("sql/023_create_template.sql", "utf-8");
+const deleteTemplateQuery = await readFile("sql/024_delete_template.sql", "utf-8");
 
 async function verifySession(req: Request, res: Response, next: NextFunction) {
   const session = req.cookies.session_id;
@@ -108,7 +111,9 @@ app.post("/add/daily", verifySession, async (req, res) => {
   const input = req.body["name"];
   const complete = req.body["complete"];
 
-  await pool.query(createDailyQuery, [id, input, false, complete]);
+  //validate complete
+
+  await pool.query(createTemplateQuery, [id, input, complete]);
 
   res.json({ status: "SUCCESS" });
 });
@@ -134,9 +139,10 @@ app.get("/lists/daily", verifySession, async (req, res) => {
 app.delete("/lists/daily", verifySession, async (req, res) => {
   const id = res.locals.user_id;
 
-  const daily_id = req.body["daily_id"];
+  const template_id = req.body["template_id"];
 
-  await pool.query(removeDailyQuery, [daily_id]);
+  await pool.query(removeDailyQuery, [template_id]);
+  await pool.query(deleteTemplateQuery, [template_id]);
 
   res.json({ status: "SUCCESS" });
 });
@@ -257,6 +263,13 @@ app.get("/logout", async (req, res) => {
 app.get("/verifyUser", verifySession, (req, res) => {
   res.status(200).json({ status: "AUTHORIZED" });
 });
+
+app.post("/generate_daily", async (req, res) => {
+  await pool.query(generateDailyQuery)
+
+  res.json({ status: "SUCCESS" })
+
+})
 
 const PORT = process.env.PORT || 3000;
 
