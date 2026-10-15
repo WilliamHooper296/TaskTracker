@@ -13,7 +13,7 @@ app.use(express.json());
 app.use(
   cors({
     origin: ["http://localhost:5173",
-    "https://tasktracker-p9o3.onrender.com"],
+    "https://task-tracker-chi-puce.vercel.app/"],
     credentials: true,
   }),
 );
