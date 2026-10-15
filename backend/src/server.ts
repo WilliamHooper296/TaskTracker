@@ -217,7 +217,7 @@ app.post("/login", async (req, res) => {
       res.cookie("session_id", exists.rows[0].session_id, {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
+        sameSite: "none",
       });
       res.json({ status: "SUCCESS" });
       return;
@@ -230,7 +230,7 @@ app.post("/login", async (req, res) => {
     res.cookie("session_id", uuid, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
+      sameSite: "none",
     });
   } else {
     res.status(401).json({ status: "UNAUTHORIZED" });
