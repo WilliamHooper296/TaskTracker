@@ -90,6 +90,17 @@ async function verifySession(req: Request, res: Response, next: NextFunction) {
   next();
 }
 
+app.get("/database/health", async (req, res) => {
+  try{
+    const result = await pool.query("SELECT NOW() AS time")
+    res.json({ status: "SUCCESS", time: result})
+  }catch(e){
+    res.json({ status: "FAILED", error: e})
+  }
+
+
+})
+
 app.post("/add/daily", verifySession, async (req, res) => {
   const id = res.locals.user_id;
 
