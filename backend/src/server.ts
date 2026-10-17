@@ -12,8 +12,10 @@ const app = express();
 app.use(express.json());
 app.use(
   cors({
-    origin: ["http://localhost:5173",
-    "https://task-tracker-chi-puce.vercel.app"],
+    origin: [
+      "http://localhost:5173",
+      "https://task-tracker-chi-puce.vercel.app",
+    ],
     credentials: true,
   }),
 );
@@ -59,9 +61,22 @@ const getSessionByUserQuery = await readFile(
   "sql/020_get_session_by_user.sql",
   "utf-8",
 );
-const generateDailyQuery = await readFile("sql/022_generate_daily.sql", "utf-8");
-const createTemplateQuery = await readFile("sql/023_create_template.sql", "utf-8");
-const deleteTemplateQuery = await readFile("sql/024_delete_template.sql", "utf-8");
+const generateDailyQuery = await readFile(
+  "sql/022_generate_daily.sql",
+  "utf-8",
+);
+const createTemplateQuery = await readFile(
+  "sql/023_create_template.sql",
+  "utf-8",
+);
+const deleteTemplateQuery = await readFile(
+  "sql/024_delete_template.sql",
+  "utf-8",
+);
+const retrieveArchiveQuery = await readFile(
+  "sql/025_retrieve_archive.sql",
+  "utf-8",
+);
 
 async function verifySession(req: Request, res: Response, next: NextFunction) {
   const session = req.cookies.session_id;
@@ -95,15 +110,13 @@ async function verifySession(req: Request, res: Response, next: NextFunction) {
 }
 
 app.get("/database/health", async (req, res) => {
-  try{
-    const result = await pool.query("SELECT NOW() AS time")
-    res.json({ status: "SUCCESS", time: result})
-  }catch(e){
-    res.json({ status: "FAILED", error: e})
+  try {
+    const result = await pool.query("SELECT NOW() AS time");
+    res.json({ status: "SUCCESS", time: result });
+  } catch (e) {
+    res.json({ status: "FAILED", error: e });
   }
-
-
-})
+});
 
 app.post("/add/daily", verifySession, async (req, res) => {
   const id = res.locals.user_id;
@@ -123,7 +136,7 @@ app.put("/swap/daily", verifySession, async (req, res) => {
 
   const daily_id = req.body["daily_id"];
 
-  await pool.query(swapDailyCheckedQuery, [daily_id]);
+  await pool.query(swapDailyCheckedQuery, [daily_id, id]);
 
   res.json({ status: "SUCCESS" });
 });
@@ -162,7 +175,7 @@ app.put("/swap/goals", verifySession, async (req, res) => {
 
   const goal_id = req.body["goal_id"];
 
-  await pool.query(swapGoalsCheckedQuery, [goal_id]);
+  await pool.query(swapGoalsCheckedQuery, [goal_id, id]);
 
   res.json({ status: "SUCCESS" });
 });
@@ -217,6 +230,7 @@ app.post("/login", async (req, res) => {
 
   if (verified) {
     const user_id = result.rows[0].user_id;
+    await pool.query(generateDailyQuery, [user_id]);
 
     const exists = await pool.query(getSessionByUserQuery, [user_id]);
     if (exists.rowCount != null && exists.rowCount > 0) {
@@ -238,12 +252,11 @@ app.post("/login", async (req, res) => {
       secure: process.env.NODE_ENV === "production",
       sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
     });
+    res.json({ status: "SUCCESS" });
   } else {
     res.status(401).json({ status: "UNAUTHORIZED" });
     return;
   }
-
-  res.json({ status: "SUCCESS" });
 });
 
 app.get("/logout", async (req, res) => {
@@ -264,12 +277,26 @@ app.get("/verifyUser", verifySession, (req, res) => {
   res.status(200).json({ status: "AUTHORIZED" });
 });
 
-app.post("/generate_daily", async (req, res) => {
-  await pool.query(generateDailyQuery)
+app.get("/archive", verifySession, async (req, res) => {
+  const id = res.locals.user_id;
 
-  res.json({ status: "SUCCESS" })
+  const archive = await pool.query(retrieveArchiveQuery, [id]);
 
-})
+  const records: Record<string, Record<string, boolean>> = {};
+
+  for (const row of archive.rows) {
+    const contents = row.contents;
+    const date = new Date(row.created_at).toISOString().split("T")[0];
+
+    if (!records[contents]) {
+      records[contents] = {};
+    }
+
+    records[contents][date] = row.checked;
+  }
+
+  res.json(records);
+});
 
 const PORT = process.env.PORT || 3000;
 

@@ -1,1 +1,1 @@
-UPDATE goals SET checked = not checked WHERE goal_id = $1
+UPDATE goals SET checked = not checked WHERE goal_id = $1 AND user_id = $2

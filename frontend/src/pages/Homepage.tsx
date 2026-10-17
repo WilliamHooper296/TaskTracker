@@ -42,11 +42,4 @@ function Homepage() {
 
 export default Homepage;
 
-//TODO: Update daily schema, make template id (serial), user_id, contents and completion a template on daily create (and delete), 
-// create a row in existing daily table each day and on create as well
-// daily rows contain: template id (FK), daily_id (serial), created_at, checked
-
-//TODO: create archive backend route and frontend page/link
-//TODO: create daily refresh backend route
-//TODO: set up daily cron service to use refresh route
 //TODO: get domain for app
