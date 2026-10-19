@@ -1,2 +1,2 @@
-UPDATE daily SET checked = not checked WHERE daily_id = $1 AND template_id = 
-(SELECT template_id FROM template WHERE user_id = $2)
+UPDATE daily SET checked = NOT checked WHERE daily_id = $1 AND EXISTS 
+(SELECT 1 FROM template WHERE template.template_id = daily.template_id AND template.user_id = #2)
