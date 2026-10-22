@@ -278,6 +278,7 @@ app.get("/verifyUser", verifySession, (req, res) => {
 });
 
 app.get("/archive", verifySession, async (req, res) => {
+  //returns { contents: {date: checked}  }
   const id = res.locals.user_id;
 
   const archive = await pool.query(retrieveArchiveQuery, [id]);

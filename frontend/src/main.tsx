@@ -7,6 +7,7 @@ import Signup from './pages/Signup';
 import Homepage from './pages/Homepage';
 import ProtectedRoute from './ProtectedRoute';
 import GuestRoute from './GuestRoute';
+import Archive from './pages/Archive';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -36,6 +37,14 @@ createRoot(document.getElementById('root')!).render(
               <Homepage />
             </ProtectedRoute>
           }
+        />
+        <Route
+        path="/archive"
+        element={
+          <ProtectedRoute>
+            <Archive />
+          </ProtectedRoute>
+        }
         />
       </Routes>
     </BrowserRouter>

@@ -25,6 +25,7 @@ function Homepage() {
 
   return (
     <div className="flex flex-col gap-10 items-center mb-10">
+      <button onClick={() => navigate("/archive")}>ARCHIVE</button>
       <h1 className="text-lg">TASKS</h1>
       <button className="border-2 p-1 rounded-lg" onClick={signOut}>
         SIGN OUT
