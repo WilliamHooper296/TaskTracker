@@ -3,9 +3,10 @@ import cors from "cors";
 import pool from "./db.js";
 import { readFile } from "node:fs/promises";
 import argon2 from "argon2";
-import crypto, { verify } from "node:crypto";
 import { Request, Response, NextFunction } from "express";
 import cookieParser from "cookie-parser";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 const app = express();
 
@@ -21,60 +22,64 @@ app.use(
 );
 app.use(cookieParser());
 
+const currentFile = fileURLToPath(import.meta.url);
+const currentDir = path.dirname(currentFile);
+const sqlDir = path.resolve(currentDir, "../sql")
+
 const retrieveUserDailyQuery = await readFile(
-  "sql/004_retrieve_user_daily.sql",
+  path.join(sqlDir, "004_retrieve_user_daily.sql"),
   "utf-8",
 );
 const retrieveUserGoalsQuery = await readFile(
-  "sql/005_retrieve_user_goals.sql",
+  path.join(sqlDir, "005_retrieve_user_goals.sql"),
   "utf-8",
 );
 const swapDailyCheckedQuery = await readFile(
-  "sql/006_swap_daily_checked.sql",
+  path.join(sqlDir, "006_swap_daily_checked.sql"),
   "utf-8",
 );
 const swapGoalsCheckedQuery = await readFile(
-  "sql/007_swap_goals_checked.sql",
+  path.join(sqlDir, "007_swap_goals_checked.sql"),
   "utf-8",
 );
-const createDailyQuery = await readFile("sql/008_create_daily.sql", "utf-8");
-const createGoalsQuery = await readFile("sql/009_create_goals.sql", "utf-8");
-const removeDailyQuery = await readFile("sql/010_remove_daily.sql", "utf-8");
-const removeGoalQuery = await readFile("sql/011_remove_goal.sql", "utf-8");
-const getUserQuery = await readFile("sql/012_get_user.sql", "utf-8");
+const createDailyQuery = await readFile(path.join(sqlDir, "008_create_daily.sql"), "utf-8");
+const createGoalsQuery = await readFile(path.join(sqlDir, "009_create_goals.sql"), "utf-8");
+const removeDailyQuery = await readFile(path.join(sqlDir, "010_remove_daily.sql"), "utf-8");
+const removeGoalQuery = await readFile(path.join(sqlDir, "011_remove_goal.sql"), "utf-8");
+const getUserQuery = await readFile(path.join(sqlDir, "012_get_user.sql"), "utf-8");
 const checkUserUniquenessQuery = await readFile(
-  "sql/013_check_user_uniqueness.sql",
+  path.join(sqlDir, "013_check_user_uniqueness.sql"),
   "utf-8",
 );
-const createUserQuery = await readFile("sql/014_create_user.sql", "utf-8");
+const createUserQuery = await readFile(path.join(sqlDir, "014_create_user.sql"), "utf-8");
 const createSessionQuery = await readFile(
-  "sql/016_create_session.sql",
+  path.join(sqlDir, "016_create_session.sql"),
   "utf-8",
 );
-const endSessionQuery = await readFile("sql/017_end_session.sql", "utf-8");
+const endSessionQuery = await readFile(path.join(sqlDir, "017_end_session.sql"), "utf-8");
 const updateSessionQuery = await readFile(
-  "sql/018_update_session.sql",
+  path.join(sqlDir, "018_update_session.sql"),
   "utf-8",
 );
-const getSessionIdQuery = await readFile("sql/019_get_session_id.sql", "utf-8");
+const getSessionIdQuery = await readFile(path.join(sqlDir, "019_get_session_id.sql"), "utf-8");
 const getSessionByUserQuery = await readFile(
-  "sql/020_get_session_by_user.sql",
+  path.join(sqlDir, "020_get_session_by_user.sql"),
   "utf-8",
 );
 const generateDailyQuery = await readFile(
-  "sql/022_generate_daily.sql",
+  path.join(sqlDir, "022_generate_daily.sql"),
   "utf-8",
 );
 const createTemplateQuery = await readFile(
-  "sql/023_create_template.sql",
+  path.join(sqlDir, "023_create_template.sql"),
   "utf-8",
 );
 const deleteTemplateQuery = await readFile(
-  "sql/024_delete_template.sql",
+  path.join(sqlDir, "024_delete_template.sql"),
   "utf-8",
 );
 const retrieveArchiveQuery = await readFile(
-  "sql/025_retrieve_archive.sql",
+  path.join(sqlDir, "025_retrieve_archive.sql"),
   "utf-8",
 );
 
@@ -236,7 +241,7 @@ app.post("/login", async (req, res) => {
     if (exists.rowCount != null && exists.rowCount > 0) {
       res.cookie("session_id", exists.rows[0].session_id, {
         httpOnly: true,
-        secure: false,
+        secure: process.env.NODE_ENV === "production",
         sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
       });
       res.json({ status: "SUCCESS" });
@@ -299,8 +304,4 @@ app.get("/archive", verifySession, async (req, res) => {
   res.json(records);
 });
 
-const PORT = process.env.PORT || 3000;
-
-app.listen(PORT, () => {
-  console.log(`Server listening on port ${PORT}`);
-});
+export default app
